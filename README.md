@@ -44,17 +44,23 @@ This analysis was conducted using **R**, following these steps:
 * The **average user took 7,638 steps per day**, nearly **double** the U.S. average (3,000–4,000 steps, Mayo Clinic).  
 * Outlier detection revealed **~100 instances** where users recorded **0 steps**.  
 
+
+
 ### **2. Correlation Analysis**
 * A **moderate positive correlation (0.59)** was found between **total steps and calories burned**.  
 * This aligns with expectations: **higher activity levels generally lead to greater calorie expenditure**.  
 * (*Further statistical testing could confirm significance.*)  
 
+<img src="https://github.com/user-attachments/assets/86ae6541-e87f-4d6b-9a5a-dbfbcc8d1558" width="500">
+  
 ### **3. Outlier Detection & Impact**
 * The **histogram of total steps** shows a **right-skewed distribution** with **zero-step days**.  
 * Possible reasons:  
     * Users **did not wear their Fitbit** on some days.  
     * Device **syncing issues** led to missing data.  
     * Users had **sedentary days**, which may not accurately represent their overall activity trends.  
+
+<img src="https://github.com/user-attachments/assets/58016359-297b-41f1-af89-abb364942009" width="500">
 
 ---
 
