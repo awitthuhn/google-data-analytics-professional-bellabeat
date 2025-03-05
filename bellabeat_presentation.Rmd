@@ -1,0 +1,264 @@
+---
+title: "<b>Bellabeat Capstone</b>"
+author: "Austin Witthuhn"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# **Table of Contents**
+1. [Synopsis](#synopsis)
+2. [Ask: Defining the Business Task](#ask-defining-the-business-task)
+   - Problem Statement
+   - Key Stakeholders
+3. [Prepare: Understanding the Data](#prepare-understanding-the-data)
+   - Data Sources
+   - Data Storage
+   - Data Organization
+   - Data Credibility & Bias Considerations
+4. [Process: Cleaning and Transforming Data](#process-cleaning-and-transforming-data)
+   - Install and Load Packages
+   - View and Clean Data
+5. [Analyze: Finding Trends & Insights](#analyze-finding-trends-insights)
+   - Get Summaries of Tables
+   - Key Findings
+   - Plot Variables & Determine Correlation
+   - Key Findings (continued)
+6. [Share: Communicate Findings](#share-communicate-findings)
+7. [Act: Recommendations and Next Steps](#act-recommendations-and-next-steps)
+   - Target Market Expansion
+   - Product Optimization
+   - Market Fit
+   - Summary of Recommendations
+8. [Conclusion](#conclusion)
+
+---
+
+# **Synopsis**
+
+In this hypothetical case study, I assume the role of a junior data analyst working on the marketing analytics team at **Bellabeat**, a high-tech company that specializes in health-focused products for women. As part of my responsibilities, I have been tasked with analyzing smart device data to uncover valuable insights into consumer behavior and product usage. Specifically, I have been provided with a dataset of Fitbit users from 2016 and have been asked to conduct a trend analysis to understand how these users interact with their devices. 
+
+The goal of this analysis is to identify patterns that could inform Bellabeat's marketing strategy, helping the company better understand its customer base and optimize its product offerings. This case study will break down the data analysis process, from exploring and cleaning the data to generating actionable insights and making recommendations based on the findings.
+
+---
+
+# **Ask: Defining the Business Task**
+## **Problem Statement**
+The goal of this analysis is to identify behavioral trends among Fitbit users. These insights will help refine Bellabeat’s marketing strategy, target the right customer segments, and optimize the design and features of Bellabeat's products to better meet user needs.
+
+## **Key Stakeholders**
+- **Urška Sršen** — (Co-founder & Chief Creative Officer)
+- **Sando Mur** — (Co-founder & Mathematician)
+- **Bellabeat** — Marketing Analytics Team (including myself)
+
+---
+
+# **Prepare: Understanding the Data**
+## **Data Sources**
+The dataset I used for this analysis was sourced from **Kaggle**, containing Fitbit fitness tracker data.
+
+## **Data Storage**
+The data files are stored in Posit Cloud. I uploaded all CSV files after extracting them from a ZIP file. I created backup data for all files and stored them in my personal Google Drive.
+
+## **Data Organization**
+- The dataset is in **long format**, with each row representing a unique time point for each user.
+- The data includes multiple levels: **daily**, **hourly**, and **minute-level** data, providing a detailed view of user activity.
+
+## **Data Credibility & Bias Considerations**
+- **Credibility**: The data is credible, though it comes from a relatively small sample size of **33 users**, which is just above the minimum threshold of 30 users recommended by the Central Limit Theorem to ensure the sampling distribution of the mean approximates normality.
+- **Potential Bias**: Given that the dataset only includes Fitbit users, it may not be representative of the broader population. There could be a self-selection bias, as individuals who choose to use fitness trackers may be more health-conscious than the general public.
+
+---
+
+# **Process: Cleaning and Transforming Data**
+## **Install and Load Packages**
+Below is my code for getting started.
+```{r}
+# Install any packages that may be needed
+install.packages("janitor") 
+install.packages("skimr") 
+install.packages("here")  
+
+# Load in the necessary libraries
+library(tidyverse) # For data manipulation and visualization
+library(lubridate) # For working with dates and times 
+library(janitor) # For cleaning data
+library(skimr) # For summarizing data
+library(here) # For path management
+library(knitr) # For dynamic report generation
+library(scales) # For scaling data and adding commas to large numbers in plots
+
+# set the working directory to the right folder for csv files (using here for better portability)
+setwd(here::here("Fitbit_041216_to_051216/Fitbit_041216_to_051216"))
+
+# Set variables for each CSV file I want to evaluate
+daily_activity_may <- read_csv("dailyActivity_merged.csv")
+sleep_day_may <- read_csv("sleepDay_merged.csv")
+```
+
+## **View and Clean Data**
+Below is my code with comments on how I went about with this process.
+```{r}
+# View the data to confirm the data type, column names, etc. - skimr is also very useful here
+str(sleep_day_may)
+str(daily_activity_may)
+
+# Verify number of distinct user IDs in both tables
+n_distinct(sleep_day_may$Id) # 24 unique Ids - under 30 participants (Central Limit Theorem)
+n_distinct(daily_activity_may$Id) # 33 unique user Ids
+
+# Determine any duplicated rows
+sum(duplicated(daily_activity_may))
+sum(duplicated(sleep_day_may))
+
+# Clean and preprocess the dataset: remove duplicates and missing values, standardize column names, rename specific columns for consistency, reformat date columns to the correct date format, and trim any leading/trailing spaces from the 'id' column.
+daily_activity_may <- daily_activity_may %>%
+  distinct() %>%
+  drop_na() %>%
+  clean_names() %>%
+  rename(date = activity_date) %>%
+  mutate(date = as_date(date, format = "%m/%d/%Y")) %>%
+  mutate(id = trimws(id))
+
+sleep_day_may <- sleep_day_may %>%
+  distinct() %>%
+  drop_na() %>% 
+  clean_names() %>%
+  rename(date = sleep_day) %>%
+  mutate(date = as_date(date, format = "%m/%d/%Y %I:%M:%S %p")) %>%
+  mutate(id = trimws(id))
+```
+
+---
+
+# **Analyze: Finding Trends & Insights**
+## **Get Summaries of Tables**
+Below you will find my code where I got the summary statistics for two of the tables.
+
+```{r}
+# Option One (summary() function):
+# daily_activity_may %>% 
+#   select(totalsteps, # Average = 7638 steps
+#          totaldistance, # Average = 5.49 (unsure if KM or Miles)
+#          sedentaryminutes, # Average = 991.2 (16.52 hours)
+#          calories) %>%  # Average = 2304 calories
+#   summary()
+# 
+# sleep_day_may %>% 
+#   select(totalminutesasleep, # Average = 419.2 minutes (~7 hours)
+#          totaltimeinbed) %>% # Average = 458.5 minutes (~7.5 hours)
+#   summary()
+
+# Option Two (skim() function)
+skim(daily_activity_may)
+skim(sleep_day_may)
+```
+
+### **Key Findings**
+1. **Average Step Count and Comparison to U.S. Average**
+   * The average Fitbit user in this study took 7,638 steps a day, which is double the amount of steps the average American walks per day (3,000–4,000 steps) according to the Mayo Clinic (https://tinyurl.com/5n85pppj).
+2. **Market Opportunity**
+   * Since Fitbit users are already significantly more active than the general population, Bellabeat could position their products as tools for those who are already committed to fitness, allowing for more targeted marketing toward health-conscious individuals.
+
+# **Plot Variables & Determine Correlation**
+```{r}
+# Plot and find correlation between different variables
+ggplot(data=daily_activity_may, aes(x=total_steps, y=calories)) + 
+  geom_point() + 
+  ggtitle("Total Steps vs. Calories") +
+  xlab("Total Steps") +
+  ylab("Calories") +
+  geom_smooth(method = "lm")
+
+# cor(daily_activity_may$steps, daily_activity_may$calories)  # Moderate correlation (0.59)
+```
+
+### **Key Findings**
+1. **Correlation Between Steps and Calories**
+   * The more steps each Fitbit user took, the more calories they generally burned. This suggests a positive relationship between physical activity (as measured by steps) and energy expenditure (as measured by calories burned).
+2. **Activity Levels and Health Impact**
+   * The relationship between steps and calories reinforces the idea that increased physical activity directly contributes to health outcomes like weight loss and improved fitness.
+
+```{r}
+ggplot(daily_activity_may, aes(x=total_steps)) + 
+  geom_histogram(binwidth=500, fill="steelblue", color="black", alpha=0.7) +  # Adjusted binwidth
+  geom_vline(aes(xintercept=mean(total_steps)), color="red", linetype="dashed", linewidth=1) +  # Vertical line for mean (using linewidth)
+  geom_density(aes(y = ..density..), fill="orange", alpha=0.2) +  # Density curve
+  scale_x_continuous(labels = scales::comma) +  # Fix: specify scales::comma for formatting x-axis labels
+  ggtitle("Distribution of Total Steps") +
+  xlab("Total Steps") +
+  ylab("# of Times Counted") +
+  theme_minimal()  # Clean theme
+```
+
+### **Key Findings**
+1. **Outlier Detection**
+   * I included this distribution to demonstrate the presence of outlier data. As shown, there are nearly 100 instances where users recorded 0 steps. This creates a significant skew in the distribution, and it’s crucial to address this anomaly.
+2. **Possible Causes** 
+   * **Device Malfunction**: Could the Fitbit devices have malfunctioned on certain days, leading to missing data or failure to track activity accurately?
+   * **Inactive Users**: Is it possible that these users were genuinely sedentary for the entire day, failing to achieve even 500 steps? This could suggest that a subset of users may not be engaging with the device as actively as intended.
+   * **Device Wear Issues**: Another plausible explanation is that users are wearing their devices but not using them effectively, or the devices may not be worn at all on certain days (e.g., left at home).
+3. **Impact on Analysis**
+   * These zero-step occurrences can distort the overall analysis, and this warrants a deeper dive to understand whether these are legitimate data points or just noise. This investigation will help refine data quality for more accurate conclusions and decision-making.
+
+---
+
+# **Share: Communicate Findings**
+1. **User Engagement**
+   * The average Fitbit user takes 7,638 steps per day — well above the U.S. average of 3,000–4,000 steps. This indicates that Fitbit users, and likely other people who utilize fitness wearables, are likely more health-conscious and engaged in physical activity.
+2. **Correlation Between Activity and Calories**
+   * There is a moderate correlation between the number of steps and the calories burned. The more active users are, the more calories they burn, which is expected but important to reinforce when creating fitness-related marketing materials or campaigns.
+3. **Analysis of Outlier Data**
+   * Depending on the data from the histogram, analysis needs to be done on the outlier data. The 0 steps taken may indicate that people will wear "fitness" devices for things other than fitness, allowing Bellabeat to market their products as doing more than just fitness, as one example.
+
+---
+
+# **Act: Recommendations and Next Steps**
+1. **Target Market Expansion**
+   * **Recommendation**: Based on the analysis showing higher activity levels among users of fitness devices, Bellabeat could broaden its target market to include health-conscious individuals who value overall wellness, not just fitness tracking.
+   * **Strategic Fit**: Bellabeat’s current products — **Leaf** (wellness tracker) and **Time** (wellness watch) — are versatile and stylish, designed to appeal to users who want a blend of functionality and aesthetic. By positioning these devices as holistic wellness tools that track not just steps but also sleep, stress, and mindfulness, Bellabeat can attract individuals who may be interested in monitoring a broader range of health metrics.
+   * **Action**: Develop marketing campaigns that highlight the multifunctional nature of the **Leaf** and **Time**, showcasing how they help users track their physical activity, sleep patterns, stress levels, and mindfulness. This approach would resonate with individuals looking for a comprehensive health companion.
+
+2. **Product Optimization**
+   * **Recommendation**: Since there is a clear connection between activity levels and calories burned, Bellabeat should emphasize this messaging across all their products, particularly the **Leaf** and **Time**, positioning them as tools to help users stay active and achieve weight loss or maintenance goals.
+   * **Action**: Update the app’s messaging to include personalized recommendations based on the user’s activity levels. For example, if a user consistently takes fewer than 5,000 steps, the app could suggest incremental activity goals and encourage users to increase their movement. This could be combined with tips for healthy habits, emphasizing how consistent activity (tracked through **Leaf** and **Time**) can lead to improved health outcomes, including weight loss.
+
+3. **Market Fit**
+   - **Recommendation**: Given the presence of nearly 100 occurrences of 0 steps, it’s important to understand why users may not be using their devices as intended. Instead of dismissing these data points as errors, they could reveal valuable insights into user behavior, potentially indicating that the devices are being used for purposes other than fitness tracking.
+   - **Market Opportunity**: The **Leaf** and **Time** are designed to be worn as accessories, which may appeal to users who are not strictly focused on fitness but still want to monitor their overall wellness. For example, some users might be using the devices primarily for sleep tracking or stress monitoring, not just step counting. By understanding these behaviors, Bellabeat could explore ways to better market its products as all-in-one wellness tools.
+   - **Broader Product Positioning**: Bellabeat should consider rebranding or enhancing their messaging to reflect the holistic nature of the devices. Instead of just advertising the **Leaf** and **Time** as fitness trackers, they should position them as wellness companions that support users’ health goals, such as improving sleep quality, reducing stress, and tracking mindfulness.
+   - **Next Steps**: Bellabeat could run a survey targeting users who log frequent zero-step days to better understand how they are using the product. This feedback will help identify whether these users are using the devices for non-fitness purposes and allow Bellabeat to refine its marketing strategy to appeal to a wider audience interested in a broad range of health metrics. For example, an online campaign highlighting how **Time** tracks not only steps but also mindfulness, stress, and sleep could attract individuals interested in a more comprehensive health tool.
+
+### **Summary of Recommendations**:
+1. **Expand Target Market**: Position **Leaf** and **Time** as holistic wellness devices that appeal to users interested in monitoring their overall health, not just fitness.
+2. **Enhance Product Messaging**: Highlight the connection between activity levels, sleep, and stress management, emphasizing the comprehensive benefits of using Bellabeat products.
+3. **Investigate User Behavior**: Use data insights to explore why users log 0 steps and understand if they are using the device for non-fitness purposes.
+
+---
+
+## **Conclusion**
+
+This analysis looked at a small portion of the available data to dig into user behavior and offer actionable insights for Bellabeat's marketing strategy. Key findings like the impact of activity levels on health outcomes and the potential to target a broader wellness market suggest that Bellabeat could broaden its product positioning. Instead of focusing only on fitness enthusiasts, they could market their devices as all-encompassing wellness tools, which would appeal to a wider audience interested in overall health, like sleep tracking and mindfulness.
+
+---
+
+### **Notes and Considerations**
+
+While this analysis focused on a small subset of the available data, it’s important to note that there’s much more to explore within the full dataset. A deeper dive into the nearly 100 instances of zero-step days could shed light on user behavior and device usage patterns, while examining the CSV files that document user activity down to the minute could uncover even more actionable insights. These deeper analyses might help refine recommendations, uncover potential device issues, or give a broader understanding of health trends.
+
+That being said, the dataset used here is far from ideal for a company looking to expand its operations. Fitbit data that’s nine years old and only represents around 30 users isn't the best foundation for strategic decision-making. Though the analysis provided some useful insights, a more recent, larger dataset would offer a much clearer picture of current user behavior, particularly in a fast-changing market.
+
+Given the scope of this capstone and the time constraints, the analysis was intentionally narrowed to key areas to provide focused insights. There’s plenty of room for further exploration, and I’m looking forward to applying the skills learned here to new challenges and diving deeper into other areas of data analysis.
+
+---
+
+### **Resources and Acknowledgments**
+
+While I dedicated significant effort to this project, the final product wouldn't have been as polished without the support of the following resources:
+
+- **ChatGPT**: For assistance with data analysis techniques, insights, and overall guidance throughout the project.
+- **Bellabeat Capstone Project Template**: From the Google Data Analytics Professional Certificate course, which provided the initial framework for the analysis.
+- **Adeola Shogbaike’s Capstone on Medium.com**: For offering additional insights and inspiration on approaching the Bellabeat project and refining analysis techniques.
+
+These resources were extremely valuable in ensuring a thorough and structured analysis, ultimately contributing to the actionable recommendations presented.
