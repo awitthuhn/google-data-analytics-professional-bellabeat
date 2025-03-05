@@ -25,7 +25,7 @@ The goal of this analysis is to **identify behavioral trends** among Fitbit user
 ---
 
 ## **Data Sources**
-The dataset used for this analysis was sourced from **Kaggle**, containing Fitbit fitness tracker data.  
+The dataset used for this analysis was sourced from **Kaggle** (https://www.kaggle.com/datasets/arashnic/fitbit), containing Fitbit fitness tracker data.  
 - **29 CSV files** covering daily, hourly, and minute-level data  
 - Some files contain over **1 million rows of data**  
 
